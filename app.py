@@ -2,159 +2,139 @@ import streamlit as st
 import json
 import os
 from datetime import datetime
-import time
 
-# --- 1. إعدادات الصفحة والستايل الخورافي ---
-st.set_page_config(page_title="مغاص محمد الأسطوري", page_icon="🔱", layout="wide")
+# --- 1. إعدادات الصفحة والجمالية ---
+st.set_page_config(page_title="مملكة محمد", page_icon="🔱", layout="wide")
 
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Changa:wght@700&display=swap');
     
-    /* خلفية فيديو أو صورة بحر حية */
     [data-testid="stAppViewContainer"] {
-        background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), 
-                    url('https://wallpaperaccess.com/full/1510461.jpg');
+        background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
+                    url('https://images.unsplash.com/photo-1505118380757-91f5f5632de0?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
         background-size: cover;
         background-attachment: fixed;
         font-family: 'Changa', sans-serif;
+    }
+
+    /* تصميم البطاقات الكبيرة للخانات */
+    .category-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(15px);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 30px;
+        padding: 40px;
+        text-align: center;
+        transition: 0.4s;
+        cursor: pointer;
         color: white;
     }
-
-    /* كارت المهمة "رسالة في زجاجة" */
-    .quest-card {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border: 2px solid rgba(0, 255, 255, 0.3);
-        border-radius: 25px;
-        padding: 20px;
-        margin-bottom: 20px;
-        transition: 0.3s;
+    .category-card:hover {
+        background: rgba(0, 255, 255, 0.2);
+        border-color: #00ffff;
+        transform: translateY(-10px);
     }
-    .quest-card:hover { border-color: #00ffff; transform: scale(1.02); }
-
-    /* عدادات الـ RPG */
-    .stat-badge {
-        background: linear-gradient(45deg, #004d40, #00bcd4);
-        padding: 10px 20px;
-        border-radius: 15px;
-        border: 2px solid #fff;
-        text-align: center;
-    }
-
-    /* زر السحق القوي */
+    
     .stButton>button {
-        background: linear-gradient(to right, #00d2ff, #3a7bd5) !important;
-        color: white !important;
-        border-radius: 50px !important;
-        font-weight: bold !important;
-        border: none !important;
-        box-shadow: 0 4px 15px rgba(0,210,255,0.4) !important;
+        width: 100%;
+        border-radius: 20px !important;
+        height: 3em;
+        font-size: 1.2em !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. نظام البيانات والذكاء ---
-DB = "ocean_adventure.json"
-def load_game():
-    if os.path.exists(DB):
-        with open(DB, "r", encoding="utf-8") as f: return json.load(f)
-    return {"level": 1, "xp": 0, "gold": 50, "depth": 0, "tasks": []}
+# --- 2. نظام حفظ البيانات ---
+def load_data():
+    if os.path.exists("mohammed_king.json"):
+        with open("mohammed_king.json", "r", encoding="utf-8") as f: return json.load(f)
+    return {"tasks": []}
 
-def save_game(data):
-    with open(DB, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False)
+def save_data(data):
+    with open("mohammed_king.json", "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False)
 
-data = load_game()
+data = load_data()
 
-# --- 3. موسيقى البحر (اختياري) ---
-st.sidebar.markdown("### 🔊 ركن الاسترخاء")
-if st.sidebar.checkbox("تشغيل صوت الأمواج 🌊"):
-    st.sidebar.audio("https://www.soundjay.com/nature/ocean-wave-1.mp3")
+# --- 3. نظام التنقل (Navigation) ---
+if 'page' not in st.session_state:
+    st.session_state.page = 'welcome'
 
-# --- 4. واجهة البطل والقائمة العلوية ---
-st.markdown("<h1 style='text-align:center;'>🧜‍♂️ مملكة الغواص محمد قاسم 🔱</h1>", unsafe_allow_html=True)
-
-c1, c2, c3, c4 = st.columns(4)
-with c1: st.markdown(f"<div class='stat-badge'>🔥 المستوى<br>{data['level']}</div>", unsafe_allow_html=True)
-with c2: st.markdown(f"<div class='stat-badge'>💰 الذهب<br>{data['gold']}</div>", unsafe_allow_html=True)
-with c3: st.markdown(f"<div class='stat-badge'>⚓ العمق<br>{data['depth']} متر</div>", unsafe_allow_html=True)
-with c4: st.markdown(f"<div class='stat-badge'>⭐ الخبرة<br>{data['xp']}/100</div>", unsafe_allow_html=True)
-
-# شريط العمق (Progress)
-st.write(f"التقدم نحو الكنز القادم:")
-st.progress(data['xp'] / 100)
-
-# --- 5. إضافة مهمة جديدة بستايل "رسالة في زجاجة" ---
-with st.expander("📝 أضف مهمة جديدة (رسالة في زجاجة)"):
-    col_in1, col_in2 = st.columns([2, 1])
-    with col_in1:
-        t_name = st.text_input("ما هي مهمتك القادمة؟")
-    with col_in2:
-        t_time = st.time_input("وقت المنبه ⏰")
+# --- الصفحة الأولى: الترحيب والاختيار ---
+if st.session_state.page == 'welcome':
+    st.markdown("<h1 style='text-align:center; color:white; font-size:60px;'>🔱 أهلاً بك في مملكتك يا محمد 🔱</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#ddd; font-size:25px;'>اختر الوجهة التي تريد الذهاب إليها الآن:</p>", unsafe_allow_html=True)
     
-    if st.button("إلقاء الزجاجة في البحر 🍾"):
-        if t_name:
-            data["tasks"].append({
-                "name": t_name, 
-                "time": str(t_time), 
-                "done": False,
-                "created_at": str(datetime.now())
-            })
-            save_game(data)
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("<div class='category-card'><h2>📚 الدراسة</h2><p>وقت التركيز والنجاح</p></div>", unsafe_allow_html=True)
+        if st.button("دخول الغرفة", key="study"):
+            st.session_state.page = 'دراسة'
             st.rerun()
 
-# --- 6. ساحة المهام (ساحة المعركة المائية) ---
-st.markdown("### 🐚 المهام العالقة في الشعاب المرجانية")
+    with col2:
+        st.markdown("<div class='category-card'><h2>💪 الرياضة</h2><p>بناء القوة والطاقة</p></div>", unsafe_allow_html=True)
+        if st.button("دخول الغرفة", key="gym"):
+            st.session_state.page = 'رياضة'
+            st.rerun()
 
-current_t = datetime.now().strftime("%H:%M")
+    with col3:
+        st.markdown("<div class='category-card'><h2>📖 المذكرات</h2><p>تفريغ الأفكار والمشاعر</p></div>", unsafe_allow_html=True)
+        if st.button("دخول الغرفة", key="journal"):
+            st.session_state.page = 'مذكرات'
+            st.rerun()
 
-for i, task in enumerate(data["tasks"]):
-    if not task["done"]:
-        # حساب الوقت المتبقي (Countdown فكرة 5)
-        # (تبسيطاً سنعرض الوقت المحدد)
+    st.write("<br>", unsafe_allow_html=True)
+    col4, col5 = st.columns(2)
+    with col4:
+        st.markdown("<div class='category-card'><h2>☕ المطالعة</h2><p>غذاء الروح والعقل</p></div>", unsafe_allow_html=True)
+        if st.button("دخول الغرفة", key="read"):
+            st.session_state.page = 'مطالعة'
+            st.rerun()
+    with col5:
+        st.markdown("<div class='category-card'><h2>🍎 الأكل</h2><p>تنظيم الوجبات الصحي</p></div>", unsafe_allow_html=True)
+        if st.button("دخول الغرفة", key="food"):
+            st.session_state.page = 'أكل'
+            st.rerun()
+
+# --- الصفحة الثانية: غرف المهام المتخصصة ---
+else:
+    room = st.session_state.page
+    st.markdown(f"<h1 style='text-align:center; color:white;'>📍 غرفة {room}</h1>", unsafe_allow_html=True)
+    
+    if st.button("⬅️ العودة للرئيسية"):
+        st.session_state.page = 'welcome'
+        st.rerun()
+
+    st.write("---")
+
+    # إضافة مهمة داخل الغرفة
+    with st.container():
+        c_in1, c_in2 = st.columns([3, 1])
+        with c_in1:
+            t_text = st.text_input(f"ما هي مهمة {room} القادمة؟")
+        with c_in2:
+            t_time = st.time_input("توقيت المنبه")
         
-        st.markdown(f"""
-            <div class="quest-card">
-                <div style="display: flex; justify-content: space-between; flex-direction: row-reverse;">
-                    <div>
-                        <h3 style="margin:0; color:#00ffff;">📜 {task['name']}</h3>
-                        <p style="margin:0; font-size:14px; color:#eee;">حان وقت الإنجاز في: {task['time']}</p>
-                    </div>
-                    <div style="text-align:center;">
-                        <span style="font-size:30px;">🎁</span><br>
-                        <small>+30 XP</small>
-                    </div>
+        if st.button(f"تثبيت في جدول {room}"):
+            if t_text:
+                data["tasks"].append({"category": room, "name": t_text, "time": str(t_time), "done": False})
+                save_data(data)
+                st.rerun()
+
+    # عرض المهام الخاصة بهذه الغرفة فقط
+    st.subheader(f"✅ قائمة مهام {room} الحالية:")
+    for i, t in enumerate(data["tasks"]):
+        if t["category"] == room and not t["done"]:
+            st.markdown(f"""
+                <div style='background:rgba(255,255,255,0.1); padding:15px; border-radius:15px; border-left: 5px solid #00ffff; margin-bottom:10px;'>
+                    <h3 style='margin:0; color:#00ffff;'>{t['name']}</h3>
+                    <p style='margin:0; color:#eee;'>⏰ التوقيت: {t['time']}</p>
                 </div>
-            </div>
-        """, unsafe_allow_html=True)
-
-        # فكرة المنبه (فكرة 7)
-        if task['time'][:5] == current_t:
-            st.warning(f"⚠️ تنبيه من الأعماق: موعد {task['name']}!")
-
-        if st.button(f"سحق المهمة والوصول للكنز 🗡️", key=f"win_{i}"):
-            task["done"] = True
-            data["xp"] += 34
-            data["gold"] += 20
-            data["depth"] += 10 # الغواص ينزل أعمق (فكرة 1)
-            
-            if data["xp"] >= 100:
-                data["level"] += 1
-                data["xp"] = 0
-                st.balloons() # احتفالية (فكرة 9)
-            
-            save_game(data)
-            st.toast(f"عاش يا بطل! حصلت على كنز جديد 💎")
-            time.sleep(0.5)
-            st.rerun()
-
-# --- 7. فكرة 10: وضع الاسترخاء (Zen Mode) ---
-if st.sidebar.button("💎 وضع الاسترخاء (Zen Mode)"):
-    st.empty()
-    st.markdown("<h2 style='text-align:center; margin-top:200px;'>استرخِ مع أمواج البحر... اترك ضجيج المهام قليلاً</h2>", unsafe_allow_html=True)
-    st.stop()
-
-if st.sidebar.button("إعادة ضبط كل شيء"):
-    if os.path.exists(DB): os.remove(DB)
-    st.rerun()
-                            
+            """, unsafe_allow_html=True)
+            if st.button("تم الإنجاز ✅", key=f"d_{i}"):
+                t["done"] = True
+                save_data(data)
+                st.rerun()
+        
