@@ -1,0 +1,201 @@
+import streamlit as st
+import json
+import os
+from datetime import datetime, timedelta
+import time
+
+# --- 1. إعدادات الصفحة والأساس ---
+st.set_page_config(page_title="مملكة محمد قاسم", page_icon="🔱", layout="wide")
+
+# تثبيت نظام التنقل (Navigation)
+if 'page' not in st.session_state:
+    st.session_state.page = 'welcome'
+
+# --- 2. نظام حفظ البيانات المحسن ---
+def load_data():
+    if os.path.exists("mohammed_realm_v2.json"):
+        with open("mohammed_realm_v2.json", "r", encoding="utf-8") as f: return json.load(f)
+    return {"tasks": [], "journal": []}
+
+def save_data(data):
+    with open("mohammed_realm_v2.json", "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False)
+
+data = load_data()
+
+# ==========================================================
+# --- الصفحة الأولى: الترحيب والستايل الفخم الموحد ---
+# ==========================================================
+if st.session_state.page == 'welcome':
+    st.markdown("""
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Changa:wght@700&display=swap');
+        [data-testid="stAppViewContainer"] {
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
+                        url('https://images.unsplash.com/photo-1505118380757-91f5f5632de0?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover; background-attachment: fixed; font-family: 'Changa', sans-serif;
+        }
+        .category-card {
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 30px;
+            padding: 30px; text-align: center; transition: 0.4s; color: white; margin-bottom: 20px;
+        }
+        .category-card:hover { background: rgba(0, 255, 255, 0.2); border-color: #00ffff; transform: translateY(-10px); }
+        .stButton>button { width: 100%; border-radius: 20px !important; height: 3em; font-size: 1.2em !important;}
+        </style>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("<h1 style='text-align:center; color:white; font-size:50px;'>🔱 مملكة محمد قاسم 🔱</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#ddd; font-size:22px;'>اختر غرفتك الخاصة للبدء:</p>", unsafe_allow_html=True)
+    
+    col1, col2, col3, col4 = st.columns(4)
+    rooms = [
+        {"id": "دراسة", "icon": "📚", "title": "غرفة الدراسة", "desc": "التركيز والنجاح"},
+        {"id": "رياضة", "icon": "💪", "title": "النادي الرياضي", "desc": "القوة والطاقة"},
+        {"id": "مذكرات", "icon": "📖", "title": "المكتب الشخصي", "desc": "كتابة الأفكار"},
+        {"id": "مطالعة", "icon": "☕", "title": "ركن القراءة", "desc": "غذاء الروح"}
+    ]
+    
+    for i, room in enumerate(rooms):
+        with [col1, col2, col3, col4][i]:
+            st.markdown(f"<div class='category-card'><h1>{room['icon']}</h1><h2>{room['title']}</h2><p>{room['desc']}</p></div>", unsafe_allow_html=True)
+            if st.button(f"دخول {room['title']}", key=f"room_{i}"):
+                st.session_state.page = room['id']
+                st.rerun()
+
+# ==========================================================
+# --- الغرف المتخصصة: كل غرفة وعالمها ---
+# ==========================================================
+else:
+    room = st.session_state.page
+    
+    # 1. زر العودة المشترك (يظهر فوق)
+    col_back, _ = st.columns([1, 4])
+    with col_back:
+        if st.button("🔙 العودة للرئيسية"):
+            st.session_state.page = 'welcome'
+            st.rerun()
+    
+    # 2. تخصيص الستايل والخلفية حسب الغرفة
+    if room == 'دراسة':
+        bg_url = 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=2000'
+        main_color = '#4caf50' # أخضر هادئ للتركيز
+        st.markdown(f"<h1 style='text-align:center; color:{main_color};'>📚 غرفة الدراسة محمد قاسم</h1>", unsafe_allow_html=True)
+
+    elif room == 'رياضة':
+        bg_url = 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2000'
+        main_color = '#f44336' # أحمر للطاقة
+        st.markdown(f"<h1 style='text-align:center; color:{main_color};'>💪 النادي الرياضي: وقت الحرق</h1>", unsafe_allow_html=True)
+
+    elif room == 'مذكرات':
+        bg_url = 'https://images.unsplash.com/photo-1589998059171-988d887df646?q=80&w=2000' # خلفية كتاب
+        main_color = '#795548' # بني للورق القديم
+        st.markdown(f"<h1 style='text-align:center; color:{main_color};'>🖋️ مكتب المذكرات الخاص</h1>", unsafe_allow_html=True)
+    
+    else: # مطالعة
+        bg_url = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=2000'
+        main_color = '#2196f3' # أزرق هادئ
+        st.markdown(f"<h1 style='text-align:center; color:{main_color};'>☕ ركن القراءة والاسترخاء</h1>", unsafe_allow_html=True)
+
+    # تطبيق الستايل المخصص للغرفة
+    st.markdown(f"""
+        <style>
+        [data-testid="stAppViewContainer"] {{
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('{bg_url}');
+            background-size: cover; background-attachment: fixed;
+        }}
+        .stButton>button {{ background-color: {main_color} !important; color: white !important; }}
+        /* ستايل الورقة للمذكرات */
+        .journal-paper {{
+            background: #fffcf0; padding: 30px; border-radius: 10px; border: 1px solid #dcdcdc;
+            color: #333; font-family: 'Amiri', serif; box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px; text-align: right;
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+    st.write("---")
+
+    # 3. الأدوات المتخصصة لكل غرفة
+    
+    # 🏃‍♂️ أدوات الرياضة (العداد والمشيك)
+    if room == 'رياضة':
+        with st.container():
+            st.write("### ⏱️ عداد التمرين (Stopwatch)")
+            col_timer1, col_timer2 = st.columns([2, 1])
+            with col_timer1:
+                if 'timer_start' not in st.session_state: st.session_state.timer_start = None
+                
+                if st.button("ابدأ التمرين (شغل العداد)"):
+                    st.session_state.timer_start = time.time()
+                    st.rerun()
+                
+                if st.session_state.timer_start:
+                    elapsed = time.time() - st.session_state.timer_start
+                    mins, secs = divmod(elapsed, 60)
+                    st.metric("الوقت المنقضي", f"{int(mins):02d}:{int(secs):02d}")
+                    if st.button("تصفير العداد"):
+                        st.session_state.timer_start = None
+                        st.rerun()
+
+            st.write("---")
+            st.write("### 📝 قائمة تمارينك اليومية:")
+            q_in1, q_in2 = st.columns([3, 1])
+            with q_in1:
+                t_name = st.text_input("اسم التمرين (مثلاً: ركض 20 دقيقة، 30 شناو)")
+            with q_in2:
+                t_time = st.time_input("وقت التنبيه")
+            if st.button("إضافة التمرين 💪"):
+                if t_name:
+                    data["tasks"].append({"category": room, "name": t_name, "time": str(t_time), "done": False})
+                    save_data(data)
+                    st.rerun()
+
+    # 🖋️ أدوات المذكرات (الورقة والوقت)
+    elif room == 'مذكرات':
+        st.write("### ✏️ اكتب ما يجول بخاطرك الآن:")
+        # الورقة والقلم
+        note_content = st.text_area("تفريغ الأفكار...", height=200, placeholder="اكتب مذكراتك هنا يا محمد...")
+        
+        if st.button("حفظ المذكرات في السجل 📘"):
+            if note_content:
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                data["journal"].append({"time": timestamp, "content": note_content})
+                save_data(data)
+                st.success("تم حفظ ذكرياتك بأمان.")
+                st.rerun()
+        
+        st.write("---")
+        st.subheader("📚 سجل ذكرياتك القديمة:")
+        for note in reversed(data["journal"]):
+            st.markdown(f"""
+                <div class="journal-paper">
+                    <small style='color:#888;'>📅 {note['time']}</small>
+                    <p style='font-size:18px;'>{note['content']}</p>
+                </div>
+            """, unsafe_allow_html=True)
+
+    # 📚 أدوات الدراسة والمطالعة (المهام الكلاسيكية)
+    else:
+        st.write(f"### ✅ قائمة مهام {room}:")
+        for i, t in enumerate(data["tasks"]):
+            if t["category"] == room and not t["done"]:
+                st.markdown(f"""
+                    <div style='background:rgba(255,255,255,0.1); padding:15px; border-radius:15px; border-left: 5px solid {main_color}; margin-bottom:10px;'>
+                        <h3 style='margin:0; color:{main_color};'>{t['name']}</h3>
+                        <p style='margin:0; color:#eee;'>⏰ الوقت: {t['time']}</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                if st.button("تم الإنجاز ✅", key=f"d_{room}_{i}"):
+                    t["done"] = True
+                    save_data(data)
+                    st.rerun()
+
+        st.write("---")
+        with st.expander("➕ أضف مهمة دراسية جديدة"):
+            c1, c2 = st.columns([3, 1])
+            with c1: t_txt = st.text_input("اسم النشاط")
+            with c2: t_tm = st.time_input("التوقيت")
+            if st.button(f"إضافة لجدول {room}"):
+                if t_txt:
+                    data["tasks"].append({"category": room, "name": t_txt, "time": str(t_tm), "done": False})
+                    save_data(data)
+                    st.rerun()
