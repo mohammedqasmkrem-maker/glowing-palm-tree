@@ -1,126 +1,113 @@
 import streamlit as st
 import json
 import os
+from datetime import datetime
 
 # --- إعدادات الصفحة ---
-st.set_page_config(page_title="ساحة مهام محمد", page_icon="🗡️", layout="wide")
+st.set_page_config(page_title="مهام محمد البحرية", page_icon="🌊", layout="wide")
 
-# --- ستايل خانات المهام (CSS) ---
+# --- CSS لتصميم البحر والخانات ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Changa:wght@700&display=swap');
     
+    /* خلفية البحر */
     [data-testid="stAppViewContainer"] {
-        background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
-                    url('https://wallpaperaccess.com/full/1253733.jpg');
+        background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), 
+                    url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
         background-size: cover;
+        background-attachment: fixed;
         font-family: 'Changa', sans-serif;
     }
 
-    /* تصميم خانة المهمة */
-    .quest-slot {
-        background: rgba(45, 20, 10, 0.85); /* لون خشبي محروق */
-        border: 2px solid #ffd700;
-        border-radius: 15px;
+    /* خانة المهمة الشفافة */
+    .task-box {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 20px;
         padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-direction: row-reverse; /* للغة العربية */
-    }
-
-    .quest-info h3 { margin: 0; color: #ffd700 !important; font-size: 22px; }
-    .quest-info p { margin: 0; color: #ddd; font-size: 14px; }
-
-    .xp-amount {
-        background: #b8860b;
+        margin-bottom: 15px;
         color: white;
-        padding: 5px 12px;
-        border-radius: 8px;
-        font-weight: bold;
-        border: 1px solid #ffd700;
+        text-align: right;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
     }
 
-    /* ستايل زر السحق */
-    .stButton>button {
-        background: linear-gradient(to bottom, #d32f2f, #b71c1c) !important;
-        color: white !important;
-        border: 1px solid #fff !important;
-        border-radius: 10px !important;
-        font-weight: bold !important;
-        width: 100% !important;
-    }
+    .stTimeInput label, .stTextInput label { color: white !important; font-size: 18px !important; }
+    
+    h1 { color: white; text-shadow: 2px 2px 10px #000; text-align: center; }
     </style>
     """, unsafe_allow_html=True)
 
 # --- نظام الحفظ ---
-DB = "rpg_quests.json"
-def load():
+DB = "sea_tasks.json"
+def load_data():
     if os.path.exists(DB):
         with open(DB, "r", encoding="utf-8") as f: return json.load(f)
-    return {"level": 1, "xp": 0, "gold": 100, "tasks": []}
+    return []
 
-def save(data):
-    with open(DB, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False)
+def save_data(tasks):
+    with open(DB, "w", encoding="utf-8") as f: json.dump(tasks, f, ensure_ascii=False)
 
-data = load()
+tasks = load_data()
 
-# --- الهيدر ---
-st.markdown("<h1 style='text-align:center; color:#ffd700;'>🛡️ لوحة مهام البطل محمد 🛡️</h1>", unsafe_allow_html=True)
+# --- الواجهة ---
+st.markdown("<h1>🌊 غواص المهام: ساحة محمد 🌊</h1>", unsafe_allow_html=True)
 
-# عدادات الحالة
-c1, c2, c3 = st.columns(3)
-with c1: st.metric("المستوى 🔥", data["level"])
-with c2: st.metric("الذهب 💰", data["gold"])
-with c3: st.metric("الخبرة ⭐", f"{data['xp']}/100")
+# إضافة مهمة جديدة مع وقت
+with st.container():
+    st.markdown("<div style='background:rgba(0,0,0,0.5); padding:20px; border-radius:15px;'>", unsafe_allow_html=True)
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        task_text = st.text_input("شنو المهمة اللي ببالك؟")
+    with col2:
+        task_time = st.time_input("وقت التنبيه")
+    
+    if st.button("تثبيت المهمة وتشغيل المنبه 🔔"):
+        if task_text:
+            new_task = {
+                "id": len(tasks),
+                "name": task_text,
+                "time": str(task_time),
+                "done": False
+            }
+            tasks.append(new_task)
+            save_data(tasks)
+            st.success(f"تم ضبط المنبه لـ {task_text} الساعة {task_time}")
+            st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 st.write("---")
 
-# خانة إضافة مهمة جديدة
-with st.expander("➕ إضافة مهمة (وحش جديد) إلى الساحة"):
-    q_name = st.text_input("اسم المهمة أو الوحش")
-    q_diff = st.selectbox("صعوبة المهمة", ["سهلة (40 XP)", "متوسطة (80 XP)", "صعبة (150 XP)"])
-    if st.button("تثبيت المهمة باللوحة 📜"):
-        if q_name:
-            xp_map = {"سهلة (40 XP)": 40, "متوسطة (80 XP)": 80, "صعبة (150 XP)": 150}
-            data["tasks"].append({"name": q_name, "xp": xp_map[q_diff], "done": False})
-            save(data)
-            st.rerun()
+# عرض المهام كخانات مرتبة
+st.markdown("<h3 style='color:white;'>📋 جدول مهامك اليومية:</h3>", unsafe_allow_html=True)
 
-# --- عرض الخانات (Quest Log) ---
-st.markdown("### 🗡️ المهام المتاحة حالياً")
-
-for i, task in enumerate(data["tasks"]):
-    if not task["done"]:
-        # إنشاء الخانة باستخدام HTML و Columns للزر
-        col_txt, col_btn = st.columns([4, 1])
-        
-        with col_txt:
+for i, t in enumerate(tasks):
+    if not t["done"]:
+        with st.container():
             st.markdown(f"""
-                <div class="quest-slot">
-                    <div class="quest-info">
-                        <h3>👾 {task['name']}</h3>
-                        <p>الحالة: نشط | الجائزة: <span class="xp-amount">+{task['xp']} XP</span></p>
+                <div class="task-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-direction: row-reverse;">
+                        <div style="font-size: 22px; font-weight: bold;">📍 {t['name']}</div>
+                        <div style="background: #00bcd4; padding: 5px 15px; border-radius: 10px; font-size: 16px;">⏰ {t['time']}</div>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
             
-        with col_btn:
-            st.write("<br>", unsafe_allow_html=True) # موازنة الزر مع الخانة
-            if st.button(f"سحق ⚔️", key=f"kill_{i}"):
-                task["done"] = True
-                data["xp"] += task["xp"]
-                data["gold"] += 25
-                if data["xp"] >= 100:
-                    data["level"] += 1
-                    data["xp"] = 0
-                    st.balloons()
-                save(data)
+            if st.button(f"تم الإنجاز ✅", key=f"done_{i}"):
+                t["done"] = True
+                save_data(tasks)
+                st.balloons()
                 st.rerun()
 
-if st.sidebar.button("تصفير المغامرة"):
-    if os.path.exists(DB): os.remove(DB)
+# تنبيه المنبه (بسيط)
+current_time = datetime.now().strftime("%H:%M")
+for t in tasks:
+    if not t["done"] and t["time"][:5] == current_time:
+        st.warning(f"🔔 حان الآن موعد مهمة: {t['name']}!")
+        st.toast(f"انتبه! موعد {t['name']}")
+
+if st.sidebar.button("مسح كل المهام"):
+    save_data([])
     st.rerun()
     
