@@ -2,112 +2,159 @@ import streamlit as st
 import json
 import os
 from datetime import datetime
+import time
 
-# --- إعدادات الصفحة ---
-st.set_page_config(page_title="مهام محمد البحرية", page_icon="🌊", layout="wide")
+# --- 1. إعدادات الصفحة والستايل الخورافي ---
+st.set_page_config(page_title="مغاص محمد الأسطوري", page_icon="🔱", layout="wide")
 
-# --- CSS لتصميم البحر والخانات ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Changa:wght@700&display=swap');
     
-    /* خلفية البحر */
+    /* خلفية فيديو أو صورة بحر حية */
     [data-testid="stAppViewContainer"] {
-        background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), 
-                    url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+        background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), 
+                    url('https://wallpaperaccess.com/full/1510461.jpg');
         background-size: cover;
         background-attachment: fixed;
         font-family: 'Changa', sans-serif;
-    }
-
-    /* خانة المهمة الشفافة */
-    .task-box {
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(15px);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        border-radius: 20px;
-        padding: 20px;
-        margin-bottom: 15px;
         color: white;
-        text-align: right;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
     }
 
-    .stTimeInput label, .stTextInput label { color: white !important; font-size: 18px !important; }
-    
-    h1 { color: white; text-shadow: 2px 2px 10px #000; text-align: center; }
+    /* كارت المهمة "رسالة في زجاجة" */
+    .quest-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(0, 255, 255, 0.3);
+        border-radius: 25px;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: 0.3s;
+    }
+    .quest-card:hover { border-color: #00ffff; transform: scale(1.02); }
+
+    /* عدادات الـ RPG */
+    .stat-badge {
+        background: linear-gradient(45deg, #004d40, #00bcd4);
+        padding: 10px 20px;
+        border-radius: 15px;
+        border: 2px solid #fff;
+        text-align: center;
+    }
+
+    /* زر السحق القوي */
+    .stButton>button {
+        background: linear-gradient(to right, #00d2ff, #3a7bd5) !important;
+        color: white !important;
+        border-radius: 50px !important;
+        font-weight: bold !important;
+        border: none !important;
+        box-shadow: 0 4px 15px rgba(0,210,255,0.4) !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- نظام الحفظ ---
-DB = "sea_tasks.json"
-def load_data():
+# --- 2. نظام البيانات والذكاء ---
+DB = "ocean_adventure.json"
+def load_game():
     if os.path.exists(DB):
         with open(DB, "r", encoding="utf-8") as f: return json.load(f)
-    return []
+    return {"level": 1, "xp": 0, "gold": 50, "depth": 0, "tasks": []}
 
-def save_data(tasks):
-    with open(DB, "w", encoding="utf-8") as f: json.dump(tasks, f, ensure_ascii=False)
+def save_game(data):
+    with open(DB, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False)
 
-tasks = load_data()
+data = load_game()
 
-# --- الواجهة ---
-st.markdown("<h1>🌊 غواص المهام: ساحة محمد 🌊</h1>", unsafe_allow_html=True)
+# --- 3. موسيقى البحر (اختياري) ---
+st.sidebar.markdown("### 🔊 ركن الاسترخاء")
+if st.sidebar.checkbox("تشغيل صوت الأمواج 🌊"):
+    st.sidebar.audio("https://www.soundjay.com/nature/ocean-wave-1.mp3")
 
-# إضافة مهمة جديدة مع وقت
-with st.container():
-    st.markdown("<div style='background:rgba(0,0,0,0.5); padding:20px; border-radius:15px;'>", unsafe_allow_html=True)
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        task_text = st.text_input("شنو المهمة اللي ببالك؟")
-    with col2:
-        task_time = st.time_input("وقت التنبيه")
+# --- 4. واجهة البطل والقائمة العلوية ---
+st.markdown("<h1 style='text-align:center;'>🧜‍♂️ مملكة الغواص محمد قاسم 🔱</h1>", unsafe_allow_html=True)
+
+c1, c2, c3, c4 = st.columns(4)
+with c1: st.markdown(f"<div class='stat-badge'>🔥 المستوى<br>{data['level']}</div>", unsafe_allow_html=True)
+with c2: st.markdown(f"<div class='stat-badge'>💰 الذهب<br>{data['gold']}</div>", unsafe_allow_html=True)
+with c3: st.markdown(f"<div class='stat-badge'>⚓ العمق<br>{data['depth']} متر</div>", unsafe_allow_html=True)
+with c4: st.markdown(f"<div class='stat-badge'>⭐ الخبرة<br>{data['xp']}/100</div>", unsafe_allow_html=True)
+
+# شريط العمق (Progress)
+st.write(f"التقدم نحو الكنز القادم:")
+st.progress(data['xp'] / 100)
+
+# --- 5. إضافة مهمة جديدة بستايل "رسالة في زجاجة" ---
+with st.expander("📝 أضف مهمة جديدة (رسالة في زجاجة)"):
+    col_in1, col_in2 = st.columns([2, 1])
+    with col_in1:
+        t_name = st.text_input("ما هي مهمتك القادمة؟")
+    with col_in2:
+        t_time = st.time_input("وقت المنبه ⏰")
     
-    if st.button("تثبيت المهمة وتشغيل المنبه 🔔"):
-        if task_text:
-            new_task = {
-                "id": len(tasks),
-                "name": task_text,
-                "time": str(task_time),
-                "done": False
-            }
-            tasks.append(new_task)
-            save_data(tasks)
-            st.success(f"تم ضبط المنبه لـ {task_text} الساعة {task_time}")
+    if st.button("إلقاء الزجاجة في البحر 🍾"):
+        if t_name:
+            data["tasks"].append({
+                "name": t_name, 
+                "time": str(t_time), 
+                "done": False,
+                "created_at": str(datetime.now())
+            })
+            save_game(data)
             st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
 
-st.write("---")
+# --- 6. ساحة المهام (ساحة المعركة المائية) ---
+st.markdown("### 🐚 المهام العالقة في الشعاب المرجانية")
 
-# عرض المهام كخانات مرتبة
-st.markdown("<h3 style='color:white;'>📋 جدول مهامك اليومية:</h3>", unsafe_allow_html=True)
+current_t = datetime.now().strftime("%H:%M")
 
-for i, t in enumerate(tasks):
-    if not t["done"]:
-        with st.container():
-            st.markdown(f"""
-                <div class="task-box">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-direction: row-reverse;">
-                        <div style="font-size: 22px; font-weight: bold;">📍 {t['name']}</div>
-                        <div style="background: #00bcd4; padding: 5px 15px; border-radius: 10px; font-size: 16px;">⏰ {t['time']}</div>
+for i, task in enumerate(data["tasks"]):
+    if not task["done"]:
+        # حساب الوقت المتبقي (Countdown فكرة 5)
+        # (تبسيطاً سنعرض الوقت المحدد)
+        
+        st.markdown(f"""
+            <div class="quest-card">
+                <div style="display: flex; justify-content: space-between; flex-direction: row-reverse;">
+                    <div>
+                        <h3 style="margin:0; color:#00ffff;">📜 {task['name']}</h3>
+                        <p style="margin:0; font-size:14px; color:#eee;">حان وقت الإنجاز في: {task['time']}</p>
+                    </div>
+                    <div style="text-align:center;">
+                        <span style="font-size:30px;">🎁</span><br>
+                        <small>+30 XP</small>
                     </div>
                 </div>
-            """, unsafe_allow_html=True)
+            </div>
+        """, unsafe_allow_html=True)
+
+        # فكرة المنبه (فكرة 7)
+        if task['time'][:5] == current_t:
+            st.warning(f"⚠️ تنبيه من الأعماق: موعد {task['name']}!")
+
+        if st.button(f"سحق المهمة والوصول للكنز 🗡️", key=f"win_{i}"):
+            task["done"] = True
+            data["xp"] += 34
+            data["gold"] += 20
+            data["depth"] += 10 # الغواص ينزل أعمق (فكرة 1)
             
-            if st.button(f"تم الإنجاز ✅", key=f"done_{i}"):
-                t["done"] = True
-                save_data(tasks)
-                st.balloons()
-                st.rerun()
+            if data["xp"] >= 100:
+                data["level"] += 1
+                data["xp"] = 0
+                st.balloons() # احتفالية (فكرة 9)
+            
+            save_game(data)
+            st.toast(f"عاش يا بطل! حصلت على كنز جديد 💎")
+            time.sleep(0.5)
+            st.rerun()
 
-# تنبيه المنبه (بسيط)
-current_time = datetime.now().strftime("%H:%M")
-for t in tasks:
-    if not t["done"] and t["time"][:5] == current_time:
-        st.warning(f"🔔 حان الآن موعد مهمة: {t['name']}!")
-        st.toast(f"انتبه! موعد {t['name']}")
+# --- 7. فكرة 10: وضع الاسترخاء (Zen Mode) ---
+if st.sidebar.button("💎 وضع الاسترخاء (Zen Mode)"):
+    st.empty()
+    st.markdown("<h2 style='text-align:center; margin-top:200px;'>استرخِ مع أمواج البحر... اترك ضجيج المهام قليلاً</h2>", unsafe_allow_html=True)
+    st.stop()
 
-if st.sidebar.button("مسح كل المهام"):
-    save_data([])
+if st.sidebar.button("إعادة ضبط كل شيء"):
+    if os.path.exists(DB): os.remove(DB)
     st.rerun()
-    
+                            
