@@ -3,93 +3,127 @@ import json
 import os
 
 # --- إعدادات الصفحة ---
-st.set_page_config(page_title="شجرة مهام محمد", page_icon="🌳")
+st.set_page_config(page_title="مغامرة محمد الأسطورية", page_icon="🌳", layout="wide")
 
-# --- CSS مستقر جداً وبسيط ---
+# --- CSS جبار للألوان والجمالية ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Changa:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Changa:wght@700&display=swap');
     
-    html, body, [data-testid="stAppViewContainer"] {
-        background-color: #e0f2f1; /* لون أخضر فاتح مريح */
-        font-family: 'Changa', sans-serif;
-        direction: rtl;
+    /* خلفية الغابة الحيوية */
+    [data-testid="stAppViewContainer"] {
+        background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
+                    url('https://img.freepik.com/free-vector/jungle-forest-with-river-background_1308-54522.jpg');
+        background-size: cover;
+        background-position: center;
     }
-    
-    /* ستايل الورقة */
-    .leaf-card {
-        background: #ffffff;
+
+    /* كروت المهام - ستايل الخشب والذهب */
+    .quest-card {
+        background: linear-gradient(135deg, #5d4037 0%, #3e2723 100%);
+        border: 3px solid #ffd700;
+        border-radius: 20px;
         padding: 20px;
-        border-radius: 15px;
-        border-right: 8px solid #2e7d32;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-        margin-bottom: 10px;
+        margin: 15px 0px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         text-align: right;
+        color: white;
+    }
+
+    .xp-badge {
+        background: #ffd700;
+        color: #000;
+        padding: 5px 15px;
+        border-radius: 50px;
+        font-weight: bold;
+        float: left;
+    }
+
+    /* العدادات العلوية */
+    .stat-box {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border: 2px solid #ffd700;
+        border-radius: 15px;
+        padding: 15px;
+        text-align: center;
+        color: #ffd700;
+        font-family: 'Changa', sans-serif;
+    }
+
+    .stButton>button {
+        background: #ffd700 !important;
+        color: #000 !important;
+        font-weight: bolder !important;
+        border-radius: 30px !important;
+        border: 2px solid #fff !important;
+        height: 3em !important;
+        font-size: 1.1em !important;
     }
     
-    .stMetric { background: white; padding: 10px; border-radius: 10px; box-shadow: 1px 1px 5px rgba(0,0,0,0.1); }
-    h1, h2, h3 { color: #2e7d32; text-align: center; }
+    h1, h2, h3 { font-family: 'Changa', sans-serif; color: #ffd700 !important; text-shadow: 2px 2px 10px #000; }
     </style>
     """, unsafe_allow_html=True)
 
 # --- نظام البيانات ---
-DB_FILE = "data.json"
-def load_data():
-    if os.path.exists(DB_FILE):
-        try:
-            with open(DB_FILE, "r", encoding="utf-8") as f: return json.load(f)
-        except: return {"level": 1, "xp": 0, "gold": 50, "tasks": []}
-    return {"level": 1, "xp": 0, "gold": 50, "tasks": []}
+DB = "save_data.json"
+def load():
+    if os.path.exists(DB):
+        with open(DB, "r", encoding="utf-8") as f: return json.load(f)
+    return {"level": 1, "xp": 0, "gold": 100, "tasks": []}
 
-def save_data(data):
-    with open(DB_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False)
+def save(data):
+    with open(DB, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False)
 
-data = load_data()
+data = load()
 
-# --- واجهة التطبيق ---
-st.write(f"<h1 style='font-size: 30px;'>🌳 شجرة مهام محمد الأسطورية</h1>", unsafe_allow_html=True)
+# --- واجهة البطل ---
+st.markdown("<h1 style='text-align:center;'>🛡️ مملكة البطل محمد قاسم 🛡️</h1>", unsafe_allow_html=True)
 
-# عرض الإحصائيات بشكل مبسط
-c1, c2 = st.columns(2)
-with c1: st.metric("المستوى 🔥", data["level"])
-with c2: st.metric("الذهب 💰", data["gold"])
+# العدادات (Stats)
+c1, c2, c3 = st.columns(3)
+with c1: st.markdown(f"<div class='stat-box'>🔥 المستوى<br><span style='font-size:30px;'>{data['level']}</span></div>", unsafe_allow_html=True)
+with c2: st.markdown(f"<div class='stat-box'>💰 الذهب<br><span style='font-size:30px;'>{data['gold']}</span></div>", unsafe_allow_html=True)
+with c3:
+    xp_prog = (data['xp'] / (data['level'] * 100)) * 100
+    st.markdown(f"<div class='stat-box'>⭐ الخبرة<br><span style='font-size:30px;'>{int(xp_prog)}%</span></div>", unsafe_allow_html=True)
 
-st.progress(min(data["xp"] / (data["level"] * 100), 1.0))
-st.write(f"<p style='text-align:center;'>الخبرة الحالية: {data['xp']}</p>", unsafe_allow_html=True)
+st.write("")
+st.progress(data['xp'] / (data['level'] * 100))
 
-st.write("---")
-
-# إضافة المهمة
-with st.expander("➕ أضف مهمة جديدة (وحش)"):
-    t_input = st.text_input("ماذا ستنجز اليوم؟")
-    if st.button("إضافة إلى الشجرة"):
-        if t_input:
-            data["tasks"].append({"id": len(data["tasks"]), "name": t_input, "done": False})
-            save_data(data)
+# منطقة إضافة المهام
+with st.expander("📜 استدعاء وحش جديد (إضافة مهمة)"):
+    name = st.text_input("شنو اسم الوحش؟")
+    if st.button("تثبيت المهمة بالخريطة ⚔️"):
+        if name:
+            data["tasks"].append({"name": name, "done": False, "xp": 45})
+            save(data)
             st.rerun()
 
-# عرض المهام (الوحوش)
-st.subheader("🍃 المهام المعلقة")
-for task in data["tasks"]:
-    if not task["done"]:
+# عرض "وحوش الغابة" (المهام)
+st.markdown("### 🌲 وحوش بانتظار سيفك")
+for i, t in enumerate(data["tasks"]):
+    if not t["done"]:
         st.markdown(f"""
-            <div class='leaf-card'>
-                <h4 style='margin:0;'>🍂 {task['name']}</h4>
+            <div class="quest-card">
+                <span class="xp-badge">+{t['xp']} XP</span>
+                <h2 style='margin:0;'>👾 {t['name']}</h2>
+                <p style='color:#ccc; margin:0;'>الخطر: متوسط | المكافأة: ذهب و خبرة</p>
             </div>
         """, unsafe_allow_html=True)
         
-        if st.button(f"هزيمة الوحش 🗡️", key=f"btn_{task['id']}"):
-            task["done"] = True
-            data["xp"] += 35
-            data["gold"] += 15
+        if st.button(f"سحق الوحش {t['name']} 🗡️", key=f"btn_{i}"):
+            t["done"] = True
+            data["xp"] += t["xp"]
+            data["gold"] += 20
             if data["xp"] >= data["level"] * 100:
                 data["level"] += 1
                 data["xp"] = 0
                 st.balloons()
-            save_data(data)
+            save(data)
             st.rerun()
 
-if st.sidebar.button("حذف كل البيانات"):
-    if os.path.exists(DB_FILE): os.remove(DB_FILE)
+if st.sidebar.button("حذف السجل وابدأ مغامرة جديدة"):
+    if os.path.exists(DB): os.remove(DB)
     st.rerun()
     
