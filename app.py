@@ -3,54 +3,42 @@ import json
 import os
 
 # --- إعدادات الصفحة ---
-st.set_page_config(page_title="شجرة مهام محمد", page_icon="🌳", layout="wide")
+st.set_page_config(page_title="شجرة مهام محمد", page_icon="🌳")
 
-# --- ستايل الشجرة والألوان الحيوية (CSS) ---
+# --- CSS مستقر جداً وبسيط ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Changa:wght@400;700&display=swap');
     
-    /* خلفية كرتونية حيوية تشبه الصورة اللي ردتها */
-    [data-testid="stAppViewContainer"] {
-        background-image: url('https://img.freepik.com/free-vector/nature-forest-landscape-background_1308-72431.jpg');
-        background-size: cover;
+    html, body, [data-testid="stAppViewContainer"] {
+        background-color: #e0f2f1; /* لون أخضر فاتح مريح */
         font-family: 'Changa', sans-serif;
+        direction: rtl;
     }
-
-    .stMetric {
-        background: rgba(255, 255, 255, 0.9);
-        padding: 10px;
-        border-radius: 15px;
-        border: 2px solid #5d3a1a;
-    }
-
-    /* ستايل ورقة المهمة (معلقة على الغصن) */
-    .task-leaf {
-        background: #fdf5e6;
-        border-left: 10px solid #8b4513;
+    
+    /* ستايل الورقة */
+    .leaf-card {
+        background: #ffffff;
         padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 15px;
-        box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
-        color: #4a3121;
+        border-radius: 15px;
+        border-right: 8px solid #2e7d32;
+        box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 10px;
         text-align: right;
     }
-
-    .stButton>button {
-        background: linear-gradient(to bottom, #ffeb3b, #fbc02d);
-        color: #000 !important;
-        border-radius: 20px !important;
-        font-weight: bold !important;
-        border: 2px solid #8b4513 !important;
-    }
+    
+    .stMetric { background: white; padding: 10px; border-radius: 10px; box-shadow: 1px 1px 5px rgba(0,0,0,0.1); }
+    h1, h2, h3 { color: #2e7d32; text-align: center; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- نظام حفظ البيانات ---
-DB_FILE = "quest_data.json"
+# --- نظام البيانات ---
+DB_FILE = "data.json"
 def load_data():
     if os.path.exists(DB_FILE):
-        with open(DB_FILE, "r", encoding="utf-8") as f: return json.load(f)
+        try:
+            with open(DB_FILE, "r", encoding="utf-8") as f: return json.load(f)
+        except: return {"level": 1, "xp": 0, "gold": 50, "tasks": []}
     return {"level": 1, "xp": 0, "gold": 50, "tasks": []}
 
 def save_data(data):
@@ -59,46 +47,49 @@ def save_data(data):
 data = load_data()
 
 # --- واجهة التطبيق ---
-st.markdown("<h1 style='text-align:center; color:#fff; text-shadow: 3px 3px 5px #000;'>🌳 مملكة المهام: شجرة محمد 🌳</h1>", unsafe_allow_html=True)
+st.write(f"<h1 style='font-size: 30px;'>🌳 شجرة مهام محمد الأسطورية</h1>", unsafe_allow_html=True)
 
-# الإحصائيات (اللفل والذهب)
-col_stat1, col_stat2, col_stat3 = st.columns(3)
-with col_stat1: st.metric("المستوى 🔥", data["level"])
-with col_stat2: st.metric("الذهب 💰", data["gold"])
-with col_stat3: 
-    prog = min(data["xp"] / (data["level"] * 100), 1.0)
-    st.write(f"الخبرة: {data['xp']}")
-    st.progress(prog)
+# عرض الإحصائيات بشكل مبسط
+c1, c2 = st.columns(2)
+with c1: st.metric("المستوى 🔥", data["level"])
+with c2: st.metric("الذهب 💰", data["gold"])
+
+st.progress(min(data["xp"] / (data["level"] * 100), 1.0))
+st.write(f"<p style='text-align:center;'>الخبرة الحالية: {data['xp']}</p>", unsafe_allow_html=True)
 
 st.write("---")
 
-# إضافة مهمة جديدة
-with st.expander("➕ أضف ثمرة جديدة للشجرة (مهمة)"):
-    new_t = st.text_input("ما هي المهمة؟")
-    if st.button("تعليق المهمة 📌"):
-        if new_t:
-            data["tasks"].append({"name": new_t, "done": False})
+# إضافة المهمة
+with st.expander("➕ أضف مهمة جديدة (وحش)"):
+    t_input = st.text_input("ماذا ستنجز اليوم؟")
+    if st.button("إضافة إلى الشجرة"):
+        if t_input:
+            data["tasks"].append({"id": len(data["tasks"]), "name": t_input, "done": False})
             save_data(data)
             st.rerun()
 
-# عرض المهام بستايل "الأوراق"
-st.subheader("⚔️ الوحوش المعلقة على الأغصان")
-for i, task in enumerate(data["tasks"]):
+# عرض المهام (الوحوش)
+st.subheader("🍃 المهام المعلقة")
+for task in data["tasks"]:
     if not task["done"]:
         st.markdown(f"""
-            <div class="task-leaf">
-                <h3 style='margin:0;'>🍂 {task['name']}</h3>
-                <small>بانتظار الإنجاز...</small>
+            <div class='leaf-card'>
+                <h4 style='margin:0;'>🍂 {task['name']}</h4>
             </div>
         """, unsafe_allow_html=True)
         
-        if st.button(f"هزيمة الوحش {i} 🗡️", key=f"bt_{i}"):
+        if st.button(f"هزيمة الوحش 🗡️", key=f"btn_{task['id']}"):
             task["done"] = True
-            data["xp"] += 30
-            data["gold"] += 10
+            data["xp"] += 35
+            data["gold"] += 15
             if data["xp"] >= data["level"] * 100:
                 data["level"] += 1
                 data["xp"] = 0
                 st.balloons()
             save_data(data)
             st.rerun()
+
+if st.sidebar.button("حذف كل البيانات"):
+    if os.path.exists(DB_FILE): os.remove(DB_FILE)
+    st.rerun()
+    
